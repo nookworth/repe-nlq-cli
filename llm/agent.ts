@@ -1,46 +1,47 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+// import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+// import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { loadMcpTools } from "@langchain/mcp-adapters";
+// import { loadMcpTools } from "@langchain/mcp-adapters";
 import input from '@inquirer/input'
+import { queryDatabase } from "./tools.js";
 
-const transport = new StdioClientTransport({
-    command: "tsx",
-    args: ["server/mcp/server.ts"]
+// const transport = new StdioClientTransport({
+//     command: "node",
+//     args: ["server/mcp/server.js"]
+//   });
+
+// const client = new Client(
+//   {
+//     name: "plaza-demo-client",
+//     version: "1.0.0"
+//   }
+// );
+
+const run = async (agent, messages: BaseMessage[]) => {
+  const userInput = await input({
+    message: "Enter a query:",
   });
 
-  const client = new Client(
-    {
-      name: "plaza-demo-client",
-      version: "1.0.0"
-    }
-  );
-
-  const run = async (agent, messages: BaseMessage[]) => {
-    const userInput = await input({
-      message: "Enter a query:",
-    });
-
-    if (userInput === "exit") {
-      return;
-    }
-
-    messages.push(new HumanMessage(userInput));
-    const result = await agent.invoke({ messages });
-    console.log(result)
-
-    const lastMessage = result.messages[result.messages.length - 1] instanceof AIMessage ? result.messages[result.messages.length - 1] : null;
-    messages.push(new AIMessage(lastMessage));
-    // console.log(lastMessage?.content);
-
-    return await run(agent, messages);
+  if (userInput === "exit") {
+    return;
   }
+
+  messages.push(new HumanMessage(userInput));
+  const result = await agent.invoke({ messages });
+  // console.log(result)
+
+  const lastMessage = result.messages[result.messages.length - 1] instanceof AIMessage ? result.messages[result.messages.length - 1] : null;
+  messages.push(new AIMessage(lastMessage));
+  console.log(lastMessage?.content);
+
+  return await run(agent, messages);
+}
 
 const agent = async () => {
   try {
-    await client.connect(transport)
+    // await client.connect(transport)
 
     const llm = new ChatOpenAI({
       model: "gpt-4o-mini",
@@ -69,18 +70,17 @@ const agent = async () => {
           status TEXT NOT NULL`
       ),
     ];
-    const tools = await loadMcpTools("plaza-demo-server", client, {
-      throwOnLoadError: true,
-      prefixToolNameWithServerName: false,
-      additionalToolNamePrefix: "",
-    });
+    // const tools = await loadMcpTools("plaza-demo-server", client, {
+    //   throwOnLoadError: true,
+    //   prefixToolNameWithServerName: false,
+    //   additionalToolNamePrefix: "",
+    // });
+    const tools = [queryDatabase];
     const agent = createReactAgent({ llm, tools });
 
     await run(agent, messages);
   } catch (error) {
     console.error(error);
-  } finally {
-    await client.close();
   }
 }
 
