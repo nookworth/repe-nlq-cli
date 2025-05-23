@@ -2,7 +2,7 @@ import { open, writeFile } from "node:fs/promises";
 import { parse, Row } from "@fast-csv/parse";
 import path from "node:path";
 
-export const ingest = async (filePath: string) => {
+const ingest = async (filePath: string) => {
   const file = await open(path.join('./data', filePath))
   const fileName = path.basename(filePath, path.extname(filePath))
   const arr: object[] = []
@@ -32,3 +32,5 @@ export const ingest = async (filePath: string) => {
 
   return processed
 };
+
+export default ingest;

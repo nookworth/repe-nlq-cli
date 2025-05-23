@@ -1,7 +1,7 @@
-import { ingest } from "./ingest.js";
 import { open, readdir } from "node:fs/promises";
-import { query } from "./query.js";
+import ingest from "../utils/ingest.js";
 import path from "node:path";
+import query from "./query.js";
 import sqlite from 'sqlite3';
 import select from "@inquirer/select";
 
@@ -9,7 +9,8 @@ import select from "@inquirer/select";
 const dbPath = './server/migrations/rent_roll.db'
 const db = new sqlite.Database(dbPath);
 const sql = `
-CREATE TABLE IF NOT EXISTS rent_roll (
+DROP TABLE IF EXISTS rent_roll;
+CREATE TABLE rent_roll (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     unit TEXT NOT NULL,
     name TEXT NOT NULL,

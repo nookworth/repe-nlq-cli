@@ -13,9 +13,11 @@ const client = new Client(
   }
 );
 
-export const query = async () => {
+const query = async () => {
     await client.connect(transport);
     const tools = await client.listTools();
     const resources = await client.listResources();
     console.log({ tools, resources });
 }
+
+export default query;
