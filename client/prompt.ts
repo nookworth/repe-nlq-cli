@@ -1,9 +1,12 @@
 import { open, readdir } from "node:fs/promises";
+import agent from "../llm/agent.js";
 import ingest from "../utils/ingest.js";
 import path from "node:path";
-import query from "./query.js";
 import sqlite from 'sqlite3';
 import select from "@inquirer/select";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 /**@todo loading indicator for initializing db */
 const dbPath = './server/migrations/rent_roll.db'
@@ -39,7 +42,7 @@ const start = async () => {
     if (choice === "ingest") {
         await ingestPrompt();
     } else if (choice === "query") {
-        await query();
+        await agent();
     }
 }
 
