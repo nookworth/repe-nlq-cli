@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import { select } from "@inquirer/prompts";
+import select from "@inquirer/select";
 import { ingest } from "./ingest";
 
 const main = async () => {

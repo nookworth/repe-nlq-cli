@@ -6,13 +6,12 @@ export const ingest = async (filePath: string) => {
   const arr: object[] = []
   const parsed = file.createReadStream().pipe(parse({ headers: true, ignoreEmpty: true }))
       .on('error', error => console.error(error))
-      .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`))
+      .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows from ${filePath}`))
 
   for await (const row of parsed) {
     arr.push(row)
   }
 
   const processed = JSON.stringify(arr).replace(/\},/g, '},\n')
-  console.log(processed)
   return processed
 };
