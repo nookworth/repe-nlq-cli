@@ -1,8 +1,8 @@
+import { db } from "../../client/prompt.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { promisify } from "util";
 import { z } from "zod";
-import sqlite from "sqlite3";
 
 const server = new McpServer({
   name: "plaza-demo-server",
@@ -10,7 +10,6 @@ const server = new McpServer({
 });
 
 const getDb = () => {
-  const db = new sqlite.Database("./server/db/rent_roll.db");
   return {
     all: promisify<string, any[]>(db.all.bind(db)),
     close: promisify(db.close.bind(db))

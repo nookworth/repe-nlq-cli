@@ -13,7 +13,7 @@ const ingest = async (filePath: string) => {
 
         for (const key in data) {
           if (key === '') continue
-          transformed[key.toLowerCase().replace(/\s+/g, '_')] = data[key]
+          transformed[key.toLowerCase().replace(/\s+/g, '_')] = data[key].replace(/\$/g, '').replace(/,/g, '')
         }
 
         return transformed

@@ -8,39 +8,54 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const dbPath = './server/db/rent_roll.db'
-const db = new sqlite.Database(dbPath);
-const sql = `
-DROP TABLE IF EXISTS rent_roll;
-CREATE TABLE rent_roll (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    unit TEXT NOT NULL,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    sq_ft INTEGER,
-    autobill DECIMAL(10,2) NOT NULL,
-    deposit DECIMAL(10,2) NOT NULL,
-    moved_in DATE,
-    lease_ends DATE,
-    status TEXT NOT NULL
-)`
-db.exec(sql, error => {
-    if (error) console.error(error)
-})
+export const dbPath = './server/db/rent_roll.db'
+export const db = new sqlite.Database(dbPath);
 
-const start = async () => {
+export const initializeDatabase = () => {
+    const sql = `
+    DROP TABLE IF EXISTS rent_roll;
+    CREATE TABLE rent_roll (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        unit STRING NOT NULL,
+        name STRING NOT NULL,
+        type STRING NOT NULL,
+        sq_ft STRING,
+        autobill DECIMAL(10,2) NOT NULL,
+        deposit DECIMAL(10,2) NOT NULL,
+        moved_in DATE,
+        lease_ends DATE,
+        status STRING NOT NULL
+    )`
+    return new Promise((resolve, reject) => {
+        db.exec(sql, error => {
+            if (error) reject(error);
+            else resolve(null);
+        });
+    });
+}
+
+const start = async (disabled: string[]) => {
     const choice = await select({
         message: "Select an option:",
         choices: [
-            { name: "Ingest", value: "ingest" },
-            { name: "Query", value: "query" },
+            { name: "Initialize Database", value: "init", disabled: disabled.includes("init") },
+            { name: "Ingest", value: "ingest", disabled: disabled.includes("ingest") },
+            { name: "Query", value: "query", disabled: disabled.includes("query") },
+            { name: "Exit", value: "exit" },
         ],
     })
 
-    if (choice === "ingest") {
+    if (choice === "init") {
+        await initializeDatabase();
+        return await start(['init', 'query'])
+    } else if (choice === "ingest") {
         await ingestPrompt();
+        return await start(['init', 'ingest'])
     } else if (choice === "query") {
         await agent();
+        return await start(['init', 'ingest'])
+    } else if (choice === "exit") {
+        return process.exit(0)
     }
 }
 
@@ -73,6 +88,8 @@ const insertPrompt = async () => {
     } catch (error) {
         console.error('Error during data insertion:', error);
     }
+
+    return await start(['init', 'ingest'])
 }
 
 const ingestPrompt = async () => {
@@ -85,4 +102,4 @@ const ingestPrompt = async () => {
     await insertPrompt();
 };
 
-start()
+start(['ingest', 'query'])
