@@ -16,7 +16,6 @@ const ingest = async (filePath: string) => {
           transformed[key.toLowerCase().replace(/\s+/g, '_')] = data[key]
         }
 
-        console.log(transformed)
         return transformed
       })
       .on('error', error => console.error(error))

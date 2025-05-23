@@ -18,6 +18,26 @@ const transport = new StdioClientTransport({
     }
   );
 
+  const run = async (agent, messages: BaseMessage[]) => {
+    const userInput = await input({
+      message: "Enter a query:",
+    });
+
+    if (userInput === "exit") {
+      return;
+    }
+
+    messages.push(new HumanMessage(userInput));
+    const result = await agent.invoke({ messages });
+    console.log(result)
+
+    const lastMessage = result.messages[result.messages.length - 1] instanceof AIMessage ? result.messages[result.messages.length - 1] : null;
+    messages.push(new AIMessage(lastMessage));
+    // console.log(lastMessage?.content);
+
+    return await run(agent, messages);
+  }
+
 const agent = async () => {
   try {
     await client.connect(transport)
@@ -28,8 +48,7 @@ const agent = async () => {
     });
     const messages: BaseMessage[] = [
       new SystemMessage(
-        `
-        You are a helpful assistant that can answer questions about the database.
+        `You are a helpful assistant that can answer questions about the database.
         Assume all database-related questions are about the rent_roll table.
         If a user asks you a question about the database, translate it into a SQL query.
         Then use the query tool to execute the query and return the results.
@@ -37,7 +56,17 @@ const agent = async () => {
         - "What is the total rent for all units?" = SELECT SUM(autobill) FROM rent_roll
         - "Select all units where the rent is greater than $1000 and return their tenants in alphabetical order." = SELECT name FROM rent_roll WHERE autobill > 1000 ORDER BY name ASC
         - "Which units were moved in after 2024-01-01?" = SELECT unit FROM rent_roll WHERE moved_in > '2024-01-01'
-        `
+        The database schema is as follows:
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          unit TEXT NOT NULL,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          sq_ft INTEGER,
+          autobill DECIMAL(10,2) NOT NULL,
+          deposit DECIMAL(10,2) NOT NULL,
+          moved_in DATE,
+          lease_ends DATE,
+          status TEXT NOT NULL`
       ),
     ];
     const tools = await loadMcpTools("plaza-demo-server", client, {
@@ -47,18 +76,7 @@ const agent = async () => {
     });
     const agent = createReactAgent({ llm, tools });
 
-    while (true) {
-      const userInput = await input({
-        message: "Enter a query:",
-      });
-
-      messages.push(new HumanMessage(userInput));
-
-      const result = await agent.invoke({ messages });
-      const lastMessage = result.messages[result.messages.length - 1] instanceof AIMessage ? result.messages[result.messages.length - 1] : null;
-      messages.push(new AIMessage(lastMessage));
-      console.log(lastMessage.content);
-    }
+    await run(agent, messages);
   } catch (error) {
     console.error(error);
   } finally {
