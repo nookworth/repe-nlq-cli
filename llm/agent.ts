@@ -33,11 +33,10 @@ const agent = async () => {
         Assume all database-related questions are about the rent_roll table.
         If a user asks you a question about the database, translate it into a SQL query.
         Then use the query tool to execute the query and return the results.
-        Examples of terms the user may use to intend a query about the database:
-        - "What is the total rent for all units?"
-        - "Give me a list of all the units that are currently occupied."
-        - "Select all units that are currently occupied where the rent is greater than $1000 and return their tenants in alphabetical order."
-        - "Which units were moved in after 2024-01-01?"
+        Examples of terms the user may use to intend a query about the database and how to translate them into a SQL query:
+        - "What is the total rent for all units?" = SELECT SUM(autobill) FROM rent_roll
+        - "Select all units where the rent is greater than $1000 and return their tenants in alphabetical order." = SELECT name FROM rent_roll WHERE autobill > 1000 ORDER BY name ASC
+        - "Which units were moved in after 2024-01-01?" = SELECT unit FROM rent_roll WHERE moved_in > '2024-01-01'
         `
       ),
     ];

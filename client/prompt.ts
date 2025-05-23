@@ -8,7 +8,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-/**@todo loading indicator for initializing db */
 const dbPath = './server/db/rent_roll.db'
 const db = new sqlite.Database(dbPath);
 const sql = `
@@ -71,16 +70,6 @@ const insertPrompt = async () => {
             const json = JSON.parse(line);
             await insertRow(json);
         }
-
-        // // Query the data after all inserts are complete
-        // db.all("SELECT unit, name, type, sq_ft, autobill, deposit, moved_in, lease_ends, status FROM rent_roll", (err, rows) => {
-        //     if (err) {
-        //         console.error('Query error:', err);
-        //     } else {
-        //         console.log('Inserted data:');
-        //         console.table(rows); // Using console.table for better formatted output
-        //     }
-        // });
     } catch (error) {
         console.error('Error during data insertion:', error);
     }
