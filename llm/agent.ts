@@ -4,9 +4,10 @@ import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { AIMessage, BaseMessage, HumanMessage, trimMessages } from "@langchain/core/messages";
+import input from '@inquirer/input'
 
-const agent = async () => {
-  const transport = new StdioClientTransport({
+const transport = new StdioClientTransport({
     command: "tsx",
     args: ["server/mcp/server.ts"]
   });
@@ -18,30 +19,40 @@ const agent = async () => {
     }
   );
 
-  await client.connect(transport)
+const agent = async () => {
+  try {
+    await client.connect(transport)
 
-  const toolList = await client.listTools();
-  const tools = new ToolNode(toolList.tools.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    schema: tool.inputSchema,
-  })) as unknown as StructuredToolInterface[])
+    const llm = new ChatOpenAI({
+      model: "gpt-4o-mini",
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    const messages: BaseMessage[] = [];
+    const toolList = await client.listTools();
+    const tools = new ToolNode(toolList.tools.map(tool => ({
+      name: tool.name,
+      description: tool.description,
+      schema: tool.inputSchema,
+    })) as unknown as StructuredToolInterface[])
+    const agent = createReactAgent({ llm, tools });
 
-  const model = new ChatOpenAI({
-    model: "gpt-4o-mini",
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+    while (true) {
+      const userInput = await input({
+        message: "Enter a query:",
+      });
 
-  const agent = createReactAgent({ llm: model, tools: tools });
+      messages.push(new HumanMessage(userInput));
 
-  const inputs = {
-    messages: [{ role: "user", content: "what is the weather in SF?" }],
-  };
-
-  const stream = await agent.stream(inputs, { streamMode: "values" });
-
-  for await (const { messages } of stream) {
-    console.log(messages);
+      const result = await agent.invoke({ messages });
+      const lastMessage = result.messages[result.messages.length - 1] instanceof AIMessage ? result.messages[result.messages.length - 1] : null;
+      messages.push(new AIMessage(lastMessage));
+      console.log(lastMessage.content);
+      console.log(messages)
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await client.close();
   }
 }
 
