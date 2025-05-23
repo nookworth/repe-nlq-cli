@@ -1,5 +1,6 @@
-import { ingest } from "./ingest";
-import { open, readdir, rm } from "node:fs/promises";
+import { ingest } from "./ingest.js";
+import { open, readdir } from "node:fs/promises";
+import { query } from "./query.js";
 import path from "node:path";
 import sqlite from 'sqlite3';
 import select from "@inquirer/select";
@@ -24,6 +25,22 @@ CREATE TABLE IF NOT EXISTS rent_roll (
 db.exec(sql, error => {
     if (error) console.error(error)
 })
+
+const start = async () => {
+    const choice = await select({
+        message: "Select an option:",
+        choices: [
+            { name: "Ingest", value: "ingest" },
+            { name: "Query", value: "query" },
+        ],
+    })
+
+    if (choice === "ingest") {
+        await ingestPrompt();
+    } else if (choice === "query") {
+        await query();
+    }
+}
 
 const insertPrompt = async () => {
     const files = await readdir("./data");
@@ -50,6 +67,7 @@ const ingestPrompt = async () => {
         choices: files.filter((file) => file.endsWith(".csv")).map((file) => ({ name: file, value: file })),
     });
     await ingest(file);
+    await insertPrompt();
 };
 
-ingestPrompt().then(() => insertPrompt())
+start()
