@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 /**@todo loading indicator for initializing db */
-const dbPath = './server/migrations/rent_roll.db'
+const dbPath = './server/db/rent_roll.db'
 const db = new sqlite.Database(dbPath);
 const sql = `
 DROP TABLE IF EXISTS rent_roll;
@@ -25,7 +25,6 @@ CREATE TABLE rent_roll (
     lease_ends DATE,
     status TEXT NOT NULL
 )`
-
 db.exec(sql, error => {
     if (error) console.error(error)
 })
@@ -54,13 +53,36 @@ const insertPrompt = async () => {
     });
     const file = await open(path.join("./data", fileChoice));
 
-    for await (const line of file.readLines()) {
-        const json = JSON.parse(line)
-        db.run("INSERT INTO rent_roll (unit, name, type, sq_ft, autobill, deposit, moved_in, lease_ends, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [json.unit, json.name, json.type, json.sq_ft, json.autobill, json.deposit, json.moved_in, json.lease_ends, json.status], (err) => {
-            if (err) {
-                console.error(err);
-            }
+    const insertRow = (json: any): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            db.run(
+                "INSERT INTO rent_roll (unit, name, type, sq_ft, autobill, deposit, moved_in, lease_ends, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [json.unit, json.name, json.type, json.sq_ft, json.autobill, json.deposit, json.moved_in, json.lease_ends, json.status],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
         });
+    };
+
+    try {
+        for await (const line of file.readLines()) {
+            const json = JSON.parse(line);
+            await insertRow(json);
+        }
+
+        // // Query the data after all inserts are complete
+        // db.all("SELECT unit, name, type, sq_ft, autobill, deposit, moved_in, lease_ends, status FROM rent_roll", (err, rows) => {
+        //     if (err) {
+        //         console.error('Query error:', err);
+        //     } else {
+        //         console.log('Inserted data:');
+        //         console.table(rows); // Using console.table for better formatted output
+        //     }
+        // });
+    } catch (error) {
+        console.error('Error during data insertion:', error);
     }
 }
 

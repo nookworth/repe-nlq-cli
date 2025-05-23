@@ -9,6 +9,7 @@
     "@inquirer/select": "^4.2.1",
     "@langchain/core": "^0.3.57",
     "@langchain/langgraph": "^0.2.73",
+    "@langchain/mcp-adapters": "^0.4.5",
     "@langchain/openai": "^0.5.11",
     "@modelcontextprotocol/sdk": "^1.11.5",
     "@types/node": "^22.15.21",
